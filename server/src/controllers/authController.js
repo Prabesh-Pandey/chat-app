@@ -36,3 +36,43 @@ export const registerUser = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const loginUser = async (req,res) => {
+    try {
+        const {email,password} = req.body;
+
+        //VACANCY ANNOUNCEMENT
+        if (!email || !password){
+            return res.status(400).json({message:"NO YOU CAN'T LEAVE THE FIELDS EMPTY AND HIT SUBMIT BROO!!"});
+        }
+
+        //USER CHECK
+        const user = await User.findOne({email});
+        if (!user){
+            return res.status(400).json({message:"ARE YOU SURE YOU ARE NOT INTO CRIME? BCOZ USER NOT FOUND!!!"});
+        }
+
+        //MEMORY POWER CHECK
+        const isMatch = await bcrypt.compare(password,user.password);
+        if(!isMatch){
+            return res.status(400).json({message:"AWW SOMEBODY FORGET TO EAT ALMOND TODAY HAHA"});
+        }
+
+        //TOKEN GENERATION
+        const token = generateToken(user._id);
+
+        res.status(200).json({
+            message:"YO YO YO ",
+            token,
+            user:{
+                id:user._id,
+                username:user.username,
+                email:user.email
+            }
+        });
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({message:"Internal server error"});
+    }
+};
