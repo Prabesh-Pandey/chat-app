@@ -1,10 +1,10 @@
 import bcrypt from "bcrypt";
 import User from "../models/User.js";
 import generateToken from "../utils/tokenGenerate.js";
-import { registerSchema } from "../validation/authValidation.js";
+import { loginSchema, registerSchema } from "../validation/authValidation.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
-export const registerUser = async (req, res) => {
-    try {
+export const registerUser = asyncHandler(async (req, res) => {
         const validatedData = registerSchema.parse(req.body);
         const {username,email,password} = validatedData;
 
@@ -18,7 +18,7 @@ export const registerUser = async (req, res) => {
         // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
+            return res.status(409).json({ message: "User already exists" });
         }
 
         // Hash the password
@@ -35,38 +35,28 @@ export const registerUser = async (req, res) => {
         await newUser.save();
 
         res.status(201).json({ message: "User registered successfully" });
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
+});
 
-export const loginUser = async (req,res) => {
-    try {
-        const {email,password} = req.body;
-
-        //VACANCY ANNOUNCEMENT
-        if (!email || !password){
-            return res.status(400).json({message:"NO YOU CAN'T LEAVE THE FIELDS EMPTY AND HIT SUBMIT BROO!!"});
-        }
+export const loginUser = asyncHandler (async (req,res) => {
+        const {email,password} = loginSchema.parse(req.body);
 
         //USER CHECK
         const user = await User.findOne({email});
         if (!user){
-            return res.status(400).json({message:"ARE YOU SURE YOU ARE NOT INTO CRIME? BCOZ USER NOT FOUND!!!"});
+            return res.status(401).json({message:"invalid creentials"});
         }
 
         //MEMORY POWER CHECK
         const isMatch = await bcrypt.compare(password,user.password);
         if(!isMatch){
-            return res.status(400).json({message:"AWW SOMEBODY FORGET TO EAT ALMOND TODAY HAHA"});
+            return res.status(400).json({message:"Invalid creentials"});
         }
 
         //TOKEN GENERATION
         const token = generateToken(user._id);
 
         res.status(200).json({
-            message:"YO YO YO ",
+            message:"login success",
             token,
             user:{
                 id:user._id,
@@ -74,9 +64,4 @@ export const loginUser = async (req,res) => {
                 email:user.email
             }
         });
-
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).json({message:"Internal server error"});
-    }
-};
+});
