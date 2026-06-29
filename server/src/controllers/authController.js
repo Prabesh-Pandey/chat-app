@@ -1,16 +1,19 @@
 import bcrypt from "bcrypt";
 import User from "../models/User.js";
 import generateToken from "../utils/tokenGenerate.js";
+import { registerSchema } from "../validation/authValidation.js";
 
 export const registerUser = async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const validatedData = registerSchema.parse(req.body);
+        const {username,email,password} = validatedData;
 
-        if (!username || !email || !password) {
-    return res.status(400).json({
-        message: "All fields are required"
-    });
-}
+        // no longer needed zod le herxa yo aba
+//         if (!username || !email || !password) {
+//     return res.status(400).json({
+//         message: "All fields are required"
+//     });
+// }
 
         // Check if user already exists
         const existingUser = await User.findOne({ email });
